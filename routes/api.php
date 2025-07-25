@@ -8,6 +8,7 @@ use App\Http\Controllers\TaskController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -25,3 +26,6 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('tasks', TaskController::class);
 });
+
+Route::get('/public-tasks', [TaskController::class, 'publicIndex']);
+Route::get('/test-tasks/{id}', [\App\Http\Controllers\Test\TestTaskController::class, 'index']);

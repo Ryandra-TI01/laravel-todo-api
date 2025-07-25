@@ -3,14 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Traits\CachesUserTasks;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
+use Illuminate\Support\Facades\Cache;
 
 class TaskController extends Controller
 {
+
+    use CachesUserTasks;
 
     public function __construct()
     {
@@ -19,30 +23,62 @@ class TaskController extends Controller
 
     public function index(Request $request)
     {
-        $tasks = $request->user()->tasks()->latest()->get();
-        return TaskResource::collection($tasks);
+
+        $request->validate([
+            'page' => 'sometimes|integer|min:1',
+            'is_completed' => 'nullable',
+            'search' => 'nullable|string|max:255',
+        ]);
+
+        $userId = $request->user()->id;
+
+        $queryParams = [
+            'page' => (int) $request->input('page', 1),
+            'is_completed' => normalize_boolean($request->input('is_completed')),// bisa null, true, false
+            'search' => $request->input('search'),
+        ];
+
+        return $this->cacheUserTasks($userId, $queryParams, function () use ($userId, $queryParams) {
+            $query = Task::where('user_id', $userId)
+                ->select(['id', 'title', 'description', 'due_date', 'is_completed']);
+
+            if (isset($queryParams['is_completed'])) {
+                $query->where('is_completed', $queryParams['is_completed']);
+            }
+
+            if (!empty($queryParams['search'])) {
+                $query->where('title', 'ilike', '%' . $queryParams['search'] . '%');
+                // Use parameter binding for search to prevent SQL injection
+                // $query->whereRaw('title ilike ?', ['%' . $queryParams['search'] . '%']);
+                $query->whereRaw('title ilike ?', ['%' . $queryParams['search'] . '%']);
+            }
+
+            return $query->latest()->paginate(10);
+        });
     }
+
+
 
     public function store(StoreTaskRequest $request)
-    {
+    {       
         $task = $request->user()->tasks()->create($request->validated());
-        return new TaskResource($task);
-    }
-
-    public function show(Task $task)
-    {
-        return new TaskResource($task);
+        $this->clearUserTaskCache($request->user()->id);
+        return response()->json([
+            'data' => new TaskResource($task)
+        ]);
     }
 
     public function update(UpdateTaskRequest $request, Task $task)
     {
         $task->update($request->validated());
+        $this->clearUserTaskCache($request->user()->id);
         return new TaskResource($task);
     }
 
     public function destroy(Task $task)
     {
         $task->delete();
+        $this->clearUserTaskCache($task->user_id);
         return response()->json(['message' => 'Task deleted']);
     }
 }
