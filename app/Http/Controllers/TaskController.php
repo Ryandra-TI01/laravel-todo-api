@@ -48,15 +48,12 @@ class TaskController extends Controller
 
             if (!empty($queryParams['search'])) {
                 $query->where('title', 'ilike', '%' . $queryParams['search'] . '%');
-                // Use parameter binding for search to prevent SQL injection
-                // $query->whereRaw('title ilike ?', ['%' . $queryParams['search'] . '%']);
                 $query->whereRaw('title ilike ?', ['%' . $queryParams['search'] . '%']);
             }
 
             return $query->latest()->paginate(10);
         });
     }
-
 
 
     public function store(StoreTaskRequest $request)
@@ -80,5 +77,20 @@ class TaskController extends Controller
         $task->delete();
         $this->clearUserTaskCache($task->user_id);
         return response()->json(['message' => 'Task deleted']);
+    }
+
+    public function stats(Request $resquest) 
+    {
+        $userId = $resquest->user()->id;
+        $total = Task::where('user_id', $userId)->count();
+        $completed = Task::where('user_id', $userId)->where('is_completed', true)->count();
+        $active = $total - $completed;
+        $rate = $total > 0 ? round(($completed / $total) * 100,1) : 0;
+
+        return response()->json([
+            'completed' => $completed,
+            'active' => $active,
+            'rate' => $rate
+        ]);
     }
 }

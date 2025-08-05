@@ -24,7 +24,11 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('tasks', TaskController::class);
+    Route::prefix('tasks')->group(function () {
+        Route::get('/stats', [TaskController::class, 'stats']);
+    });
+    Route::apiResource('/tasks', TaskController::class);
+
 });
 
 Route::get('/public-tasks', [TaskController::class, 'publicIndex']);
