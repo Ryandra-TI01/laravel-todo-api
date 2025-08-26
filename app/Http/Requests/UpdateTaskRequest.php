@@ -26,6 +26,7 @@ class UpdateTaskRequest extends FormRequest
             'description' => 'nullable|string',
             'due_date'    => 'nullable|date',
             'is_completed'=> 'nullable|boolean',
+            'priority'    => 'nullable|in:low,medium,high', // Validation rule for priority
         ];
     }
 }

@@ -26,6 +26,7 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('tasks')->group(function () {
         Route::get('/stats', [TaskController::class, 'stats']);
+        Route::get('/calendar', [TaskController::class, 'calendarTasks']);
     });
     Route::apiResource('/tasks', TaskController::class);
 

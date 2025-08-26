@@ -54,10 +54,19 @@ class TaskController extends Controller
             return $query->latest()->paginate(10);
         });
     }
+    public function calendarTasks(Request $request)
+    {
+        $userId = $request->user()->id;
 
+        $tasks = $this->cacheUserTasks($userId, [], fn() => Task::where('user_id', $userId)->get());
+
+        return response()->json([
+            'data' => TaskResource::collection($tasks)
+        ]);
+    }
 
     public function store(StoreTaskRequest $request)
-    {       
+    {
         $task = $request->user()->tasks()->create($request->validated());
         $this->clearUserTaskCache($request->user()->id);
         return response()->json([
@@ -79,18 +88,20 @@ class TaskController extends Controller
         return response()->json(['message' => 'Task deleted']);
     }
 
-    public function stats(Request $resquest) 
+    public function stats(Request $resquest)
     {
         $userId = $resquest->user()->id;
         $total = Task::where('user_id', $userId)->count();
         $completed = Task::where('user_id', $userId)->where('is_completed', true)->count();
         $active = $total - $completed;
-        $rate = $total > 0 ? round(($completed / $total) * 100,1) : 0;
+        $rate = $total > 0 ? round(($completed / $total) * 100, 1) : 0;
 
         return response()->json([
             'completed' => $completed,
             'active' => $active,
-            'rate' => $rate
+            'rate' => $rate,
+            'total' => $total
+
         ]);
     }
 }

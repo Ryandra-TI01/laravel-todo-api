@@ -25,6 +25,8 @@ class StoreTaskRequest extends FormRequest
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
             'due_date'    => 'nullable|date',
+            'is_completed'=> 'nullable|boolean',
+            'priority'    => 'nullable|in:low,medium,high', // New validation rule for priority
         ];
     }
 
