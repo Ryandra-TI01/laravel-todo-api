@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -27,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('tasks')->group(function () {
         Route::get('/stats', [TaskController::class, 'stats']);
         Route::get('/calendar', [TaskController::class, 'calendarTasks']);
+        Route::get('/analytics', [AnalyticsController::class, 'index']);
     });
     Route::apiResource('/tasks', TaskController::class);
 
